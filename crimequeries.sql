@@ -70,15 +70,15 @@ WHERE IncidentDate BETWEEN '2023-09-01' AND '2023-09-10';
 /*5*/
 ALTER TABLE Victim
 ADD COLUMN Age INT;
-UPDATE Victim SET Age = 30 WHERE VictimID = 1;
-UPDATE Victim SET Age = 45 WHERE VictimID = 2;
-UPDATE Victim SET Age = 28 WHERE VictimID = 3;
+UPDATE Victim SET Age = 32 WHERE VictimID = 1;
+UPDATE Victim SET Age = 30 WHERE VictimID = 2;
+UPDATE Victim SET Age = 22 WHERE VictimID = 3;
 
 ALTER TABLE Suspect
 ADD Age INT;
-UPDATE Suspect SET Age = 30 WHERE SuspectID = 1;
+UPDATE Suspect SET Age = 39 WHERE SuspectID = 1;
 UPDATE Suspect SET Age = 25 WHERE SuspectID = 2;
-UPDATE Suspect SET Age = 35 WHERE SuspectID = 3;
+UPDATE Suspect SET Age = 38 WHERE SuspectID = 3;
 
 SELECT VictimID, CrimeID, Name, ContactInfo, Injuries, Age, NULL AS Description, NULL AS CriminalHistory FROM Victim
 UNION ALL
