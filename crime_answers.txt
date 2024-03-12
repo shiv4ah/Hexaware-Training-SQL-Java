@@ -1,0 +1,185 @@
+create database crime;
+use crime;
+
+CREATE TABLE Crime (
+CrimeID INT PRIMARY KEY,
+IncidentType VARCHAR(255),
+IncidentDate DATE,
+Location VARCHAR(255),
+Description TEXT,
+Status VARCHAR(20)
+);
+CREATE TABLE Victim (
+VictimID INT PRIMARY KEY,
+CrimeID INT,
+Name VARCHAR(255),
+ContactInfo VARCHAR(255),
+Injuries VARCHAR(255),
+FOREIGN KEY (CrimeID) REFERENCES Crime(CrimeID)
+);
+CREATE TABLE Suspect (
+SuspectID INT PRIMARY KEY,
+CrimeID INT,
+Name VARCHAR(255),
+Description TEXT,
+CriminalHistory TEXT,
+FOREIGN KEY (CrimeID) REFERENCES Crime(CrimeID)
+);
+
+INSERT INTO Crime (CrimeID, IncidentType, IncidentDate, Location, Description, Status)
+VALUES
+(1, 'Robbery', '2023-09-15', '123 Main St, Cityville', 'Armed robbery at a convenience store', 'Open'),
+(2, 'Homicide', '2023-09-20', '456 Elm St, Townsville', 'Investigation into a murder case', 'Under
+Investigation'),
+(3, 'Theft', '2023-09-10', '789 Oak St, Villagetown', 'Shoplifting incident at a mall', 'Closed');
+
+INSERT INTO Victim (VictimID, CrimeID, Name, ContactInfo, Injuries)
+VALUES
+(1, 1, 'John Doe', 'johndoe@example.com', 'Minor injuries'),
+(2, 2, 'Jane Smith', 'janesmith@example.com', 'Deceased'),
+(3, 3, 'Alice Johnson', 'alicejohnson@example.com', 'None');
+
+INSERT INTO Suspect 
+VALUES
+(1, 1, 'Robber 1', 'Armed and masked robber', 'Previous robbery convictions'),
+(2, 2, 'Unknown', 'Investigation ongoing', NULL),
+(3, 3, 'Suspect 1', 'Shoplifting suspect', 'Prior shoplifting arrests');
+
+/*1*/
+
+SELECT * 
+FROM Crime 
+WHERE Status = 'Open';
+
+/*2*/
+
+SELECT COUNT(*) AS TotalIncidents
+FROM Crime;
+
+/*3*/
+
+SELECT DISTINCT IncidentType
+FROM Crime;
+
+/*4*/
+
+SELECT *
+FROM Crime
+WHERE IncidentDate BETWEEN '2023-09-01' AND '2023-09-10';
+
+/*5*/
+ALTER TABLE Victim
+ADD COLUMN Age INT;
+UPDATE Victim SET Age = 30 WHERE VictimID = 1;
+UPDATE Victim SET Age = 45 WHERE VictimID = 2;
+UPDATE Victim SET Age = 28 WHERE VictimID = 3;
+
+ALTER TABLE Suspect
+ADD Age INT;
+UPDATE Suspect SET Age = 30 WHERE SuspectID = 1;
+UPDATE Suspect SET Age = 25 WHERE SuspectID = 2;
+UPDATE Suspect SET Age = 35 WHERE SuspectID = 3;
+
+SELECT VictimID, CrimeID, Name, ContactInfo, Injuries, Age, NULL AS Description, NULL AS CriminalHistory FROM Victim
+UNION ALL
+SELECT SuspectID, CrimeID, Name, NULL AS ContactInfo, NULL AS Injuries, Age, Description, CriminalHistory FROM Suspect
+ORDER BY Age DESC;
+
+/*6*/
+
+SELECT AVG(Age) AS AverageAge
+FROM (SELECT Age FROM Victim UNION ALL SELECT Age FROM Suspect) AS CombinedAges;
+
+/*7*/
+
+SELECT IncidentType, COUNT(*) AS IncidentCount
+FROM Crime
+WHERE Status = 'Open'
+GROUP BY IncidentType;
+
+/*8*/
+
+SELECT Name
+FROM (
+    SELECT Name
+    FROM Victim
+    UNION ALL
+    SELECT Name
+    FROM Suspect
+) AS PersonsInvolved
+WHERE Name LIKE '%Doe%';
+
+/*9*/
+SELECT Name FROM Victim WHERE CrimeID IN (SELECT CrimeID FROM Crime WHERE Status = 'Open')
+UNION
+SELECT Name FROM Suspect WHERE CrimeID IN (SELECT CrimeID FROM Crime WHERE Status = 'Open');
+
+SELECT Name FROM Victim WHERE CrimeID IN (SELECT CrimeID FROM Crime WHERE Status = 'Closed')
+UNION
+SELECT Name FROM Suspect WHERE CrimeID IN (SELECT CrimeID FROM Crime WHERE Status = 'Closed');
+
+/*10*/
+
+SELECT DISTINCT C.IncidentType FROM Crime C
+JOIN (SELECT CrimeID FROM Victim WHERE Age = 30 UNION SELECT CrimeID FROM Suspect WHERE Age = 30 UNION 
+SELECT CrimeID FROM Victim WHERE Age = 35 UNION SELECT CrimeID FROM Suspect WHERE Age = 35) AS Incidents30_35 ON C.CrimeID = Incidents30_35.CrimeID;
+
+/*11*/
+
+SELECT Name, 'Victim' AS Role
+FROM Victim JOIN Crime ON Victim.CrimeID = Crime.CrimeID WHERE IncidentType = 'Robbery'
+UNION
+SELECT Name, 'Suspect' AS Role
+FROM Suspect JOIN Crime ON Suspect.CrimeID = Crime.CrimeID WHERE IncidentType = 'Robbery';
+
+/*12*/
+
+SELECT IncidentType FROM Crime WHERE Status = 'Open' GROUP BY IncidentType HAVING COUNT(*) > 1;
+
+/*13*/
+
+SELECT DISTINCT C.*, S.Name AS SuspectName FROM Crime C
+JOIN Suspect S ON C.CrimeID = S.CrimeID
+JOIN Victim V ON C.CrimeID = V.CrimeID AND S.Name = V.Name;
+
+/*14*/
+
+SELECT C.*, V.Name AS VictimName, V.ContactInfo, V.Injuries, S.Name AS SuspectName, S.Description AS SuspectDescription, S.CriminalHistory
+FROM Crime C
+LEFT JOIN Victim V ON C.CrimeID = V.CrimeID
+LEFT JOIN Suspect S ON C.CrimeID = S.CrimeID;
+
+/*15*/
+
+SELECT C.IncidentType FROM Crime C
+JOIN (SELECT CrimeID FROM Suspect WHERE Age > ANY (SELECT Age FROM Victim WHERE Victim.CrimeID = Suspect.CrimeID)) 
+AS IncidentsWithOlderSuspects ON C.CrimeID = IncidentsWithOlderSuspects.CrimeID;
+
+/*16*/
+
+SELECT Name, COUNT(*) AS Incident_Count FROM Suspect
+INNER JOIN Crime ON Suspect.CrimeID = Crime.CrimeID GROUP BY Name HAVING COUNT(*) > 1;
+
+/*17*/
+
+SELECT * FROM Crime
+LEFT JOIN Suspect ON Crime.CrimeID = Suspect.CrimeID WHERE Suspect.SuspectID IS NULL;
+
+/*18*/
+
+SELECT c.CrimeID, c.IncidentType, c.IncidentDate, c.Location, c.Description, c.Status
+FROM Crime c WHERE IncidentType = 'Homicide'
+OR (IncidentType = 'Robbery' AND NOT EXISTS (SELECT 1 FROM Crime c2 WHERE c2.CrimeID = c.CrimeID AND c2.IncidentType != 'Robbery'));
+
+/*19*/
+
+SELECT c.CrimeID, c.IncidentType, c.IncidentDate, c.Location, c.Description, c.Status,
+COALESCE(s.Name, 'No Suspect') AS SuspectName
+FROM Crime c LEFT JOIN Suspect s ON c.CrimeID = s.CrimeID;  
+
+/*20*/
+
+SELECT DISTINCT s.SuspectID, s.Name
+FROM Suspect s JOIN Crime c ON s.CrimeID = c.CrimeID WHERE c.IncidentType IN ('Robbery', 'Assault');
+
+
